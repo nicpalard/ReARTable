@@ -21,6 +21,10 @@ class SonicPiController {
     if(DEBUG) { println("Sending `" + message + "` to SonicPi"); }
   }
   
+  public void sendStop(String root) {
+    sendOsc(root + "/stop", new Object[] {true});
+  }
+  
   public void sendBeat(int speed) {
     sendOsc("/beat01", new Object[] {speed}); 
   }

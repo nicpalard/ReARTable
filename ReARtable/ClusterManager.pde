@@ -38,7 +38,7 @@ public class ClusterManager extends PaperScreen {
      
      checkClusters(clusters);
      for (SoundComponent s : sounds) {
-        displayCluster(s.m_exCluster.m_cluster, color(0, 255, 0)); 
+        displayCluster(s.getCluster().getCluster(), color(0, 255, 0)); 
      }
      
    }
@@ -128,7 +128,11 @@ public class ClusterManager extends PaperScreen {
 
   void createSoundComponent(ExtendedStickerCluster cluster) {
     // TODO : Create different sounds depending on the composition of the cluster (accessible via cluster.m_objects)
-    Beat b = new Beat(cluster, 1);
+    SoundComponent s = new Beat(cluster, 1);
+    SoundComponent b = new DrumBeat(cluster, 1);
+    s.play();
+    b.play();
+    sounds.add(s);
     sounds.add(b);
   }
   
