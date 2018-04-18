@@ -2,6 +2,7 @@ import oscP5.*;
 import netP5.*;
 
 class SonicPiController {
+  
   private NetAddress m_sonicPi;
   private OscP5 m_osc;
   
@@ -17,10 +18,10 @@ class SonicPiController {
   public void sendOsc(String root, Object[] params) {
     OscMessage message = new OscMessage(root, params);
     m_osc.send(message, m_sonicPi);
-    println("Sending `" + message + "` to SonicPi");
+    if(DEBUG) { println("Sending `" + message + "` to SonicPi"); }
   }
   
   public void sendBeat(int speed) {
-    this.sendOsc("/beat01", new Object[] {speed}); 
+    sendOsc("/beat01", new Object[] {speed}); 
   }
 }

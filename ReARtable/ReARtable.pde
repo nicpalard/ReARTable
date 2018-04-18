@@ -16,7 +16,7 @@ ARDisplay display;
 Camera camera;
 SonicPiController sonicPi;
 
-ArrayList<StickerCluster> soundComponents;
+ArrayList<SoundComponent> sounds;
 
 PFont fpsFont;
 
@@ -42,15 +42,16 @@ void setup() {
   papart.loadSketches();
   
   fpsFont = createFont("Verdana", 50);
-  soundComponents = new ArrayList<StickerCluster>();
+  sounds = new ArrayList<SoundComponent>();
   sonicPi = new SonicPiController();
 }
 
 void draw() {
   manualCameraRendering();
   manualARRendering();
-  if(soundComponents.size() > 0) {
-    sonicPi.sendBeat(1);
+  for (SoundComponent sc : sounds) {
+    sc.play();
+    sc.show();
   }
 }
 
