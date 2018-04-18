@@ -1,0 +1,7 @@
+
+live_loop :beat01 do
+  nv = sync "/osc/beat01"
+  speed = nv[0]
+  sample :bd_haus, rate: 1
+  sleep 1/speed
+end
