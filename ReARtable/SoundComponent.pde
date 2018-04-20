@@ -1,24 +1,42 @@
 public abstract class SoundComponent {
   
   protected ExtendedStickerCluster m_exCluster;
+  protected boolean m_isPlaying = false;
   
   SoundComponent(ExtendedStickerCluster exCluster) {
-     m_exCluster = exCluster; 
+    m_exCluster = exCluster; 
   }
   
   abstract void play();
   abstract void pause();
-  abstract void show();
+  abstract void update();
+  
+  void toggle() {
+    if (m_isPlaying) {
+      pause();
+    } 
+    else {
+      play();
+    }   
+  }
   
   ExtendedStickerCluster getCluster() {
     return m_exCluster;
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof SoundComponent)) return false;
+    SoundComponent otherSc = (SoundComponent) other;
+    return this.m_exCluster.equals(otherSc.m_exCluster);
   }
 }
 
 
 public class Beat extends SoundComponent {
   
-  private int m_beatSpeed = 1;
+  private float m_beatSpeed = 1;
+  private float m_amplitude = 0.1;
   
   Beat(ExtendedStickerCluster exCluster) {
     super(exCluster);
@@ -30,15 +48,25 @@ public class Beat extends SoundComponent {
   }
   
   void play() {
-    sonicPi.sendOsc("/beat01", new Object[] {m_beatSpeed});
+    m_isPlaying = true;
+    sonicPi.sendOsc("/beat01/start", new Object[] {m_beatSpeed, m_amplitude});
   }
   void pause() {
-    
+    m_isPlaying = false;
+    sonicPi.sendOsc("/beat01/stop");
   }
   
-  void show() {
-    fill(255, 255, 0);
-    rect(m_exCluster.m_cluster.center.x, m_exCluster.m_cluster.center.y, 30, 30);
+  void update() {
+    sonicPi.sendOsc("beat01/update", new Object[] {m_beatSpeed, m_amplitude});
+  }
+  
+  void updateAmplitude(float amplitude) {
+    this.m_amplitude = amplitude;
+    update();
+  }
+  
+  void updateSpeed(float speed) {
+    this.m_beatSpeed = speed;
   }
 }
 
@@ -60,11 +88,10 @@ public class DrumBeat extends SoundComponent {
   }
   
   void pause() {
-    sonicPi.sendOsc("/beat02/stop", new Object[] {m_beatSpeed});
+    sonicPi.sendOsc("/beat02/stop");
   }
   
-  void show() {
-    fill(0, 255, 0);
-    rect(m_exCluster.m_cluster.center.x, m_exCluster.m_cluster.center.y, 30, 30);
+  void update() {
+    sonicPi.sendOsc("beat01/update", new Object[] {m_beatSpeed});
   }
 }

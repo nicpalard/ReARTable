@@ -11,23 +11,6 @@ import ddf.minim.analysis.FFT;
 import ddf.minim.*;
 import controlP5.*;
 
-// AUDIO VIZU VARIABLES
-Minim minim;
-AudioInput input;
-FFT fftLog;
-
-// Setup params
-color bgColor = color(0,0,0);
-
-// Modifiable parameters
-float spectrumScale = 2;
-float STROKE_MAX = 10;
-float STROKE_MIN = 2;
-float strokeMultiplier = 1;
-float audioThresh = .9;
-float[] circles = new float[29];
-float DECAY_RATE = 2;
-
 /* GLOBAL VARIABLES */
 boolean DEBUG = false;
 boolean PROJECTION = false;
@@ -65,31 +48,24 @@ void setup() {
   fpsFont = createFont("Verdana", 50);
   sounds = new ArrayList<SoundComponent>();
   sonicPi = new SonicPiController();
-  
-  // AUDIO VISU TEST
-  minim = new Minim(this);
-  input = minim.getLineIn(minim.MONO, 2048);
-  
-  fftLog = new FFT( input.bufferSize(), input.sampleRate());
-  fftLog.logAverages( 22, 3);
-  
-  noFill();
-  ellipseMode(RADIUS);
 }
 
+float amplitude = 0.1;
+float speed = 1;
 void draw() {
   manualCameraRendering();
   manualARRendering();
   for (SoundComponent sc : sounds) {
-    sc.show();
+    if(sc instanceof Beat) {
+      ((Beat) sc).updateAmplitude(amplitude);
+      ((Beat) sc).updateSpeed(speed);
+    }
   }
 }
 
 void mouseClicked() {
   for (SoundComponent sc : sounds) {
-    if (sc instanceof DrumBeat) {
-        sc.pause(); 
-    }
+    sc.toggle();
   }
 }
 
@@ -120,4 +96,21 @@ void keyPressed() {
   if (key == 'd') {
     DEBUG = !DEBUG;
   }
+  
+  if (key == 'y') {
+    speed += 0.1;
+  }
+  
+  if (key == 't') {
+    speed -= 0.1;
+  }
+  
+  if (key == '+') {
+    amplitude += 0.05;
+  }  
+  
+  if (key == '-') {
+    amplitude -= 0.05;
+  }  
+  
 }

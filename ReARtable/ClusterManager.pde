@@ -25,7 +25,7 @@ public class ClusterManager extends PaperScreen {
     setDrawingSize(m_formatHeight, m_formatWidth);
     loadMarkerBoard(Papart.markerFolder + m_format + "-default.svg", m_formatHeight, m_formatWidth);
     setDrawOnPaper();     
-    setQuality(4.0f);
+    setQuality(2.0f);
    }
    
    void drawOnPaper() {
@@ -36,30 +36,33 @@ public class ClusterManager extends PaperScreen {
      ArrayList<StickerCluster> clusters = StickerCluster.createZoneCluster(trackedElements, m_clusterSize);
      if(DEBUG) { displayAllClusters(clusters, color(0, 0, 0)); }
      
-     checkClusters(clusters);
+     if (frameCount % 5 == 0) {
+       lightCheck(clusters);
+     }
+     //checkClusters(clusters);
      for (SoundComponent s : sounds) {
         displayCluster(s.getCluster().getCluster(), color(0, 255, 0)); 
      }
      
    }
    
+   // TODO: Redo this :'(
    void checkClusters(ArrayList<StickerCluster> currentClusters) {
      for (StickerCluster cluster : currentClusters) {
        // Search if the found cluster is currently tracked i.e there are informations on it.
        int idx = findCluster(cluster, m_trackedClusters);
        if (idx != -1) { // Found it
-         // Update the frame count (used to check if it is here for enough time to be a sound component)
+         // Check if it is already a sound and if not, update the frame count (used to check if it is here for enough time to be a sound component)
          ExtendedStickerCluster exCluster = m_trackedClusters.get(idx);
-         exCluster.frameCountUp();
-         // Check if it is enough to be a sound component
-         if (exCluster.getFrameCount() >= MINIMUM_FRAME_VALIDITY && (frameCount % FRAME_TEST_RANGE) == 0) {
-           // If it is enough, create the associated sound component
-           if (!exCluster.isPermanent) {
+         if(!exCluster.isPermanent() ) {
+           exCluster.frameCountUp();
+           // Check if it is enough to be a sound component
+           if (exCluster.getFrameCount() >= MINIMUM_FRAME_VALIDITY && (frameCount % FRAME_TEST_RANGE) == 0) {
+             // If it is enough, create the associated sound component
              createSoundComponent(exCluster);
-             exCluster.isPermanent = true;
-           }
-         }
-       }
+           } // end if appreaded enough to be a sound
+         } // end if isPermanent
+       } // end if foundCluster
        else {
          if (cluster.size() >= 4) {
            m_trackedClusters.add(new ExtendedStickerCluster(cluster));
@@ -70,18 +73,73 @@ public class ClusterManager extends PaperScreen {
        // Every X frames, reset the tracked cluster array to avoid bad detection due to stacking
        // We keep permanent cluster because it means that it is associated to a sound
        for (int i = 0 ; i < m_trackedClusters.size() ; i++) {
-         if (!m_trackedClusters.get(i).isPermanent) {
+         if (!m_trackedClusters.get(i).isPermanent()) {
            m_trackedClusters.remove(i);
+         } // end if isPermanent
+       } // end for tracked clusters
+     } // end if time to check
+   }
+   
+   // Every X frames do a lightCheck
+   void lightCheck(ArrayList<StickerCluster> clusters) {
+     ArrayList<ExtendedStickerCluster> exClusterToRemove = new ArrayList<ExtendedStickerCluster>();
+     // If there are trackedClusters
+     if (!m_trackedClusters.isEmpty()) {
+       // For each trackedCluster :
+       //  1. Check if it is still tracked this frame
+       //  2. If true, keep tracking it, if false remove it
+       //  3. For all the other clusters (not tracked), create a trackedCluster that will be processed during the next check
+       for(ExtendedStickerCluster exCluster : m_trackedClusters ) {
+         int idx = -1;
+         boolean isStillDetected = false;
+         for (StickerCluster cluster : clusters) {
+           idx++;
+           if (exCluster.equals(cluster)) {
+             clusters.remove(idx);
+             if (!exCluster.isPermanent()) {
+               if (exCluster.getFrameCount() < 10) {
+                 println("frameCount up: " + exCluster.getFrameCount());
+                 exCluster.frameCountUp();
+               }
+               else {
+                 createSoundComponent(exCluster);
+               }
+             }
+             isStillDetected = true;
+             break;
+           }
          }
+         if (!isStillDetected) {
+           if(exCluster.isPermanent()) {
+             if (exCluster.getFrameCount() > 0) {
+               println("frameCount down: " + exCluster.getFrameCount());
+               exCluster.frameCountDown();
+             }
+             else {
+               exClusterToRemove.add(exCluster);
+               deleteSoundComponent(exCluster.getSound());
+             }
+           }
+         }
+       }
+       for (ExtendedStickerCluster exCluster : exClusterToRemove) {
+         m_trackedClusters.remove(exCluster);
+       }
+     }
+     
+     // After removing all the already tracked clusters, add the untracked one to the tracklist
+     for (StickerCluster cluster : clusters) {
+       if (cluster.size() >= 4) {
+         m_trackedClusters.add(new ExtendedStickerCluster(cluster));
        }
      }
    }
    
    int findCluster(Object cluster, ArrayList<ExtendedStickerCluster> trackedClusters) {
      int idx = -1;
-     for (ExtendedStickerCluster tCluster : trackedClusters) { 
+     for (ExtendedStickerCluster exCluster : trackedClusters) { 
        idx++;
-       if (tCluster.equals(cluster)) {
+       if (exCluster.equals(cluster)) {
          return idx;
        }
      }
@@ -91,7 +149,7 @@ public class ClusterManager extends PaperScreen {
    void displayStickers(ArrayList<TrackedElement> stickers) {
      noStroke();
      for (TrackedElement sticker : stickers) {
-       if (sticker.attachedValue == 1) { //red
+       if (sticker.attachedValue == 1) { // red
          fill(255, 0, 0);
          } 
        else if (sticker.attachedValue == 2) { //blue
@@ -127,16 +185,20 @@ public class ClusterManager extends PaperScreen {
   }
 
   void createSoundComponent(ExtendedStickerCluster cluster) {
-    // TODO : Create different sounds depending on the composition of the cluster (accessible via cluster.m_objects)
+    // TODO : Create different sounds depending on the composition of the cluster (accessible via cluster.getObjects())
     SoundComponent s = new Beat(cluster, 1);
-    SoundComponent b = new DrumBeat(cluster, 1);
     s.play();
-    b.play();
     sounds.add(s);
-    sounds.add(b);
+    cluster.setSound(s);    
+    /*
+    SoundComponent b = new DrumBeat(cluster, 1);
+    b.play();
+    sounds.add(b);*/
   }
   
-  void deleteSoundComponent() {
-    
+  void deleteSoundComponent(SoundComponent s) {
+    s.pause();
+    sounds.remove(s);
+    s.getCluster().setSound(null);
   }
 }

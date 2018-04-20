@@ -1,16 +1,16 @@
 public class ExtendedStickerCluster {
   
-  public boolean isPermanent;
+  public SoundComponent sound;
   
   // This is used to check if the cluster has already been detected has a premanent cluster
   private StickerCluster m_cluster;
   private int[] m_objects;
   
   private int m_frameCount;
-  private static final float MAX_DIST = 5;
+  private static final float MAX_DIST = 20;
   
   ExtendedStickerCluster(StickerCluster cluster) {
-    isPermanent = false;
+    sound = null;
     m_frameCount = 1;
     m_cluster = cluster;
     
@@ -42,6 +42,18 @@ public class ExtendedStickerCluster {
   
   public StickerCluster getCluster() {
     return this.m_cluster;
+  }
+  
+  public void setSound(SoundComponent s) {
+    this.sound = s;
+  }
+  
+  public SoundComponent getSound() {
+    return this.sound;
+  }
+  
+  public boolean isPermanent() {
+    return !(this.sound == null);
   }
   
   @Override
