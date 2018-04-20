@@ -9,7 +9,7 @@ public class ClusterManager extends PaperScreen {
   private final float m_formatHeight = 297;
   private final float m_formatWidth = 210;
   private final int m_stickerSize = 15;
-  private final int m_clusterSize = 55;
+  private final float m_clusterSize = 27.5;
   
   private final int MINIMUM_FRAME_VALIDITY = 15;
   private final int FRAME_TEST_RANGE = 30;
@@ -175,7 +175,7 @@ public class ClusterManager extends PaperScreen {
      fill(255);
      ellipse(cluster.center.x, cluster.center.y, 5, 5);
      noFill();
-     ellipse(cluster.center.x, cluster.center.y, 55, 55);
+     ellipse(cluster.center.x, cluster.center.y, m_clusterSize * 2, m_clusterSize * 2);
    }
    
   void displayAllClusters(ArrayList<StickerCluster> clusters, color c) {

@@ -52,6 +52,7 @@ void setup() {
 
 float amplitude = 0.1;
 float speed = 1;
+
 void draw() {
   manualCameraRendering();
   manualARRendering();
@@ -105,11 +106,11 @@ void keyPressed() {
     speed -= 0.1;
   }
   
-  if (key == '+') {
+  if (key == 'o') {
     amplitude += 0.05;
   }  
   
-  if (key == '-') {
+  if (key == 'l') {
     amplitude -= 0.05;
   }  
   
