@@ -1,4 +1,4 @@
-import fr.inria.papart.procam.camera.*;
+ import fr.inria.papart.procam.camera.*;
 import fr.inria.papart.procam.display.*;
 import fr.inria.papart.procam.*;
 import tech.lity.rea.svgextended.*;
@@ -58,8 +58,14 @@ void draw() {
   manualARRendering();
   for (SoundComponent sc : sounds) {
     if(sc instanceof Beat) {
-      ((Beat) sc).updateAmplitude(amplitude);
-      ((Beat) sc).updateSpeed(speed);
+      if (sc.getModifier() != null) {
+        float x = sc.getCluster().getCluster().center.x - sc.getModifier().getPosition().x;
+        float y = sc.getCluster().getCluster().center.y - sc.getModifier().getPosition().y;
+        float angle = degrees(atan2(y, x)) + 180;
+        ((Beat) sc).updateAmplitude(angle / 360);
+      }
+      //((Beat) sc).updateAmplitude(amplitude);
+      //((Beat) sc).updateSpeed(speed);
     }
   }
 }

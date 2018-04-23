@@ -1,5 +1,6 @@
 public abstract class SoundComponent {
   
+  protected TrackedElement m_modifier;
   protected ExtendedStickerCluster m_exCluster;
   protected boolean m_isPlaying = false;
   
@@ -22,6 +23,14 @@ public abstract class SoundComponent {
   
   ExtendedStickerCluster getCluster() {
     return m_exCluster;
+  }
+  
+  public void setModifier(TrackedElement e) {
+    m_modifier = e;
+  }
+  
+  public TrackedElement getModifier() {
+    return m_modifier;
   }
 
   @Override
@@ -65,8 +74,18 @@ public class Beat extends SoundComponent {
     update();
   }
   
+  void updateAmplitude() {
+    if (m_modifier != null) {
+      float x = m_exCluster.getCluster().center.x - m_modifier.getPosition().x;
+      float y = m_exCluster.getCluster().center.y - m_modifier.getPosition().y;
+      float angle = degrees(atan2(y, x)) + 180;
+      updateAmplitude(angle/360);
+    }
+  }
+  
   void updateSpeed(float speed) {
     this.m_beatSpeed = speed;
+    update();
   }
 }
 

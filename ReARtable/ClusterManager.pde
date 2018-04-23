@@ -12,7 +12,8 @@ public class ClusterManager extends PaperScreen {
   private final float m_clusterSize = 27.5;
   
   private final int MINIMUM_FRAME_VALIDITY = 15;
-  private final int FRAME_TEST_RANGE = 30;
+  private final int FRAME_CHECK_INTERVAL = 5;
+  private final float MAX_MODIFIER_RANGE = m_clusterSize + 30;
   
   private ArrayList<ExtendedStickerCluster> m_trackedClusters;
   
@@ -36,52 +37,42 @@ public class ClusterManager extends PaperScreen {
      ArrayList<StickerCluster> clusters = StickerCluster.createZoneCluster(trackedElements, m_clusterSize);
      if(DEBUG) { displayAllClusters(clusters, color(0, 0, 0)); }
      
-     if (frameCount % 5 == 0) {
-       lightCheck(clusters);
+     if (frameCount % FRAME_CHECK_INTERVAL == 0) {
+       lightCheckClusters(clusters);
+       checkModifiers(clusters);
      }
-     //checkClusters(clusters);
+     
      for (SoundComponent s : sounds) {
-        displayCluster(s.getCluster().getCluster(), color(0, 255, 0)); 
+       displaySoundComponent(s);
+       //displayCluster(s.getCluster().getCluster(), color(0, 255, 0)); 
      }
      
    }
    
-   // TODO: Redo this :'(
-   void checkClusters(ArrayList<StickerCluster> currentClusters) {
-     for (StickerCluster cluster : currentClusters) {
-       // Search if the found cluster is currently tracked i.e there are informations on it.
-       int idx = findCluster(cluster, m_trackedClusters);
-       if (idx != -1) { // Found it
-         // Check if it is already a sound and if not, update the frame count (used to check if it is here for enough time to be a sound component)
-         ExtendedStickerCluster exCluster = m_trackedClusters.get(idx);
-         if(!exCluster.isPermanent() ) {
-           exCluster.frameCountUp();
-           // Check if it is enough to be a sound component
-           if (exCluster.getFrameCount() >= MINIMUM_FRAME_VALIDITY && (frameCount % FRAME_TEST_RANGE) == 0) {
-             // If it is enough, create the associated sound component
-             createSoundComponent(exCluster);
-           } // end if appreaded enough to be a sound
-         } // end if isPermanent
-       } // end if foundCluster
-       else {
-         if (cluster.size() >= 4) {
-           m_trackedClusters.add(new ExtendedStickerCluster(cluster));
+   void checkModifiers(ArrayList<StickerCluster> clusters) {
+     for (SoundComponent sc : sounds) {
+       boolean sameModifier = false;
+       TrackedElement modifier = null;
+       TrackedElement currentModifier = sc.getModifier();
+       for (StickerCluster cluster : clusters) {
+         if (cluster.size() == 1) {
+           if (currentModifier != null && cluster.center.dist(currentModifier.getPosition()) < 5) {
+             println("Old modifier updated.");
+             sameModifier = true;
+             modifier = cluster.get(0);
+           }
+           else if(!sameModifier && modifier == null && cluster.center.dist(sc.getCluster().getCluster().center) < MAX_MODIFIER_RANGE) {
+             println("Old modifier deleted, new modifier detected.");
+             modifier = cluster.get(0);
+           }
          }
        }
+       sc.setModifier(modifier);
      }
-     if (frameCount % FRAME_TEST_RANGE == 0) {
-       // Every X frames, reset the tracked cluster array to avoid bad detection due to stacking
-       // We keep permanent cluster because it means that it is associated to a sound
-       for (int i = 0 ; i < m_trackedClusters.size() ; i++) {
-         if (!m_trackedClusters.get(i).isPermanent()) {
-           m_trackedClusters.remove(i);
-         } // end if isPermanent
-       } // end for tracked clusters
-     } // end if time to check
    }
    
    // Every X frames do a lightCheck
-   void lightCheck(ArrayList<StickerCluster> clusters) {
+   void lightCheckClusters(ArrayList<StickerCluster> clusters) {
      ArrayList<ExtendedStickerCluster> exClusterToRemove = new ArrayList<ExtendedStickerCluster>();
      // If there are trackedClusters
      if (!m_trackedClusters.isEmpty()) {
@@ -97,7 +88,7 @@ public class ClusterManager extends PaperScreen {
            if (exCluster.equals(cluster)) {
              clusters.remove(idx);
              if (!exCluster.isPermanent()) {
-               if (exCluster.getFrameCount() < 10) {
+               if (exCluster.getFrameCount() < MINIMUM_FRAME_VALIDITY) {
                  println("frameCount up: " + exCluster.getFrameCount());
                  exCluster.frameCountUp();
                }
@@ -110,9 +101,8 @@ public class ClusterManager extends PaperScreen {
            }
          }
          if (!isStillDetected) {
-           if(exCluster.isPermanent()) {
+           if (exCluster.isPermanent()) {
              if (exCluster.getFrameCount() > 0) {
-               println("frameCount down: " + exCluster.getFrameCount());
                exCluster.frameCountDown();
              }
              else {
@@ -146,26 +136,30 @@ public class ClusterManager extends PaperScreen {
      return -1;
    }
    
+   void displaySticker(TrackedElement sticker) {
+     if (sticker.attachedValue == 1) { // red
+       fill(255, 0, 0);
+     } 
+     else if (sticker.attachedValue == 2) { //blue
+       fill(0, 0, 255);
+     } 
+     else {
+       fill(255, 255, 0);
+     }
+     PVector pos = sticker.getPosition();
+     ellipse(pos.x, pos.y, m_stickerSize, m_stickerSize);
+     
+     if(DEBUG) {
+       fill(255);
+       stroke(0);
+       text(Integer.toString(sticker.attachedValue), pos.x, pos.y, 10);
+     }
+   }
+   
    void displayStickers(ArrayList<TrackedElement> stickers) {
      noStroke();
      for (TrackedElement sticker : stickers) {
-       if (sticker.attachedValue == 1) { // red
-         fill(255, 0, 0);
-         } 
-       else if (sticker.attachedValue == 2) { //blue
-         fill(0, 0, 255);
-       } 
-       else {
-         fill(255, 255, 0);
-       }
-       PVector pos = sticker.getPosition();
-       ellipse(pos.x, pos.y, m_stickerSize, m_stickerSize);
-       
-       if(DEBUG) {
-         fill(255);
-         stroke(0);
-         text(Integer.toString(sticker.attachedValue), pos.x, pos.y, 10);
-       }
+       displaySticker(sticker);
      }
    }
    
@@ -200,5 +194,12 @@ public class ClusterManager extends PaperScreen {
     s.pause();
     sounds.remove(s);
     s.getCluster().setSound(null);
+  }
+  
+  void displaySoundComponent(SoundComponent s) {
+    if (s.getModifier() != null) {
+      displaySticker(s.getModifier());
+    }
+    displayCluster(s.getCluster().getCluster(), color(0, 255, 0));
   }
 }
